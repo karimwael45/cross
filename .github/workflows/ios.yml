@@ -1,0 +1,31 @@
+name: iOS IPA
+
+on:
+  push:
+    branches: [main, CP-5-fix]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: 'stable'
+
+      - run: flutter pub get
+
+      - name: Build IPA
+        run: |
+          flutter build ios --release --no-codesign
+          cd build/ios/iphoneos
+          mkdir Payload
+          cp -r Runner.app Payload/
+          zip -r Rythmify.ipa Payload/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Rythmify-ipa
+          path: build/ios/iphoneos/Rythmify.ipa
