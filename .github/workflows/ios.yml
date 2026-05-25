@@ -17,6 +17,11 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Fix iOS minimum version
+        run: |
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 13.0/IPHONEOS_DEPLOYMENT_TARGET = 15.0/g' ios/Runner.xcodeproj/project.pbxproj
+          sed -i '' "s/platform :ios, '13.0'/platform :ios, '15.0'/g" ios/Podfile || true
+
       - name: Build IPA
         run: |
           flutter build ios --release --no-codesign
