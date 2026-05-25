@@ -17,26 +17,39 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Fix iOS settings
+      - name: Fix iOS minimum version
         run: |
-          cd ios
-          # Fix minimum version
-          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 13.0/IPHONEOS_DEPLOYMENT_TARGET = 15.0/g' Runner.xcodeproj/project.pbxproj
-          # Disable code signing
-          sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer";/CODE_SIGN_IDENTITY = "";/g' Runner.xcodeproj/project.pbxproj
-          sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' Runner.xcodeproj/project.pbxproj
-          sed -i '' 's/DEVELOPMENT_TEAM = [A-Z0-9]*;/DEVELOPMENT_TEAM = "";/g' Runner.xcodeproj/project.pbxproj
-          sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 13.0/IPHONEOS_DEPLOYMENT_TARGET = 15.0/g' ios/Runner.xcodeproj/project.pbxproj
 
-      - name: Build IPA
+      - name: Install pods
         run: |
-          flutter build ios --release --no-codesign
-          cd build/ios/iphoneos
+          cd ios && pod install
+
+      - name: Build with xcodebuild
+        run: |
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/ios/derived \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Package IPA
+        run: |
+          APP_PATH=$(find build/ios/derived -name "Runner.app" -type d | grep -v "Tests" | head -1)
+          echo "Found: $APP_PATH"
+          ls "$APP_PATH/Info.plist"
           mkdir Payload
-          cp -r Runner.app Payload/
-          zip -r Rythmify.ipa Payload/
+          cp -r "$APP_PATH" Payload/Runner.app
+          zip -qr Rythmify.ipa Payload
+          ls -lh Rythmify.ipa
 
       - uses: actions/upload-artifact@v4
         with:
           name: Rythmify-ipa
-          path: build/ios/iphoneos/Rythmify.ipa
+          path: Rythmify.ipa
