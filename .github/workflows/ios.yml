@@ -17,6 +17,9 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Fix font_awesome_flutter
+        run: flutter pub upgrade font_awesome_flutter
+
       - name: Fix iOS minimum version
         run: |
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 13.0/IPHONEOS_DEPLOYMENT_TARGET = 15.0/g' ios/Runner.xcodeproj/project.pbxproj
